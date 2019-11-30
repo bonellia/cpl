@@ -5,8 +5,6 @@
  */
 package ceng.ceng351.bookdb;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  *
