@@ -1,7 +1,6 @@
 
 --------------------------------------------------------------
-*** Q3 ***
-book_name	category	first_publish_year
-Zoopolis	Politika/Arastirma	2016
+*** Insert into Author ***
+0 authors are inserted.
 
 --------------------------------------------------------------

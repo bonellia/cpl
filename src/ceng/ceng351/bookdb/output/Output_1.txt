@@ -1,7 +1,6 @@
 
 --------------------------------------------------------------
-*** Q7 ***
-publisher_id	publisher_name
-34	Koc Universitesi Yayinlari
+*** Create tables ***
+Created 0 tables.
 
 --------------------------------------------------------------

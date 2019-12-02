@@ -5,12 +5,18 @@
  */
 package ceng.ceng351.bookdb;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 
 /**
  *
  * @author Kril
  */
 public class BOOKDB implements IBOOKDB{
+    
+    private static Connection con;
     
     /**
      * Place your initialization code inside if required.
@@ -41,6 +47,93 @@ public class BOOKDB implements IBOOKDB{
      */
     @Override
     public int createTables(){
+        
+        int result;
+        Statement stm;
+        
+        // First, creating our query strings.
+        // author(author_id:int, author_name:varchar(60))
+        String queryCreateAuthorTable = ""
+                + "CREATE TABLE author("
+                + "author_id INT NOT NULL,"
+                + "author_name VARCHAR(60),"
+                + "PRIMARY KEY (author_id))";
+        try {
+            stm = BOOKDB.con.createStatement();
+            result = stm.executeUpdate(queryCreateAuthorTable);
+            stm.close();
+        }
+        catch (SQLException e){
+            System.out.println("Failed to create Author table with the exception "+e);
+        }
+        // publisher(publisher_id:int, publisher_name:varchar(50))
+        String queryCreatePublisherTable = ""
+                + "CREATE TABLE publisher("
+                + "publisher_id INT NOT NULL,"
+                + "publisher_name VARCHAR(50),"
+                + "PRIMARY KEY (publisherid))";
+        try {
+            stm = BOOKDB.con.createStatement();
+            result = stm.executeUpdate(queryCreatePublisherTable);
+            stm.close();
+        }
+        catch (SQLException e){
+            System.out.println("Failed to create publisher table with the exception "+e);
+        }
+        // book(isbn:char(13), book_name:varchar(120), publisher_id:int,
+        // first_publish_year:char(4), page_count:int, category:varchar(25),
+        // rating:float)REFERENCES publisher(publisherid)
+        String queryCreateBookTable = ""
+                + "CREATE TABLE book("
+                + "isbn CHAR(13) NOT NULL,"
+                + "book_name VARCHAR(120) NOT NULL,"
+                + "pubblisher_id INT,"
+                + "first_publish_year CHAR(4),"
+                + "page_count INT,"
+                + "category VARCHAR(25),"
+                + "rating FLOAT,"
+                + "PRIMARY KEY (isbn),"
+                + "FOREIGN KEY (publisher_id) REFERENCES publisher(publisher_id)"
+                            + " ON UPDATE CASCADE ON DELETE CASCADE)";
+        try {
+            stm = BOOKDB.con.createStatement();
+            result = stm.executeUpdate(queryCreateBookTable);
+            stm.close();
+        }
+        catch (SQLException e){
+            System.out.println("Failed to create book table with the exception "+e);
+        }
+        // author_of(isbn:char(13),author_id:int)REFERENCES book(isbn) author(authorid)
+        String queryCreateAuthorOfTable = ""
+                + "CREATE TABLE author_of("
+                + "isbn CHAR(13) NOT NULL,"
+                + "author_id INT NOT NULL,"
+                + "FOREIGN KEY (isbn) REFERENCES book(isbn)"
+                            + " ON UPDATE CASCADE ON DELETE CASCADE,"
+                + "FOREIGN KEY (author_id) REFERENCES author(author_id)"
+                            + " ON UPDATE CASCADE ON DELETE CASCADE)";
+        try {
+            stm = BOOKDB.con.createStatement();
+            result = stm.executeUpdate(queryCreateAuthorOfTable);
+            stm.close();
+        }
+        catch (SQLException e){
+            System.out.println("Failed to create author_of table with the exception "+e);
+        }
+        // phw1(isbn:char(13), book_name:varchar(120), rating:float)
+        String queryCreatePhw1Table = ""
+                + "CREATE TABLE phw1("
+                + "isbn CHAR(13) NOT NULL,"
+                + "book_name VARCHAR(120),"
+                + "rating FLOAT)";
+        try {
+            stm = BOOKDB.con.createStatement();
+            result = stm.executeUpdate(queryCreatePhw1Table);
+            stm.close();
+        }
+        catch (SQLException e){
+            System.out.println("Failed to create phw1 table with the exception "+e);
+        }
         return 0;
     }
 
