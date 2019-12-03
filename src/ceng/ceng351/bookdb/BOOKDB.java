@@ -48,7 +48,7 @@ public class BOOKDB implements IBOOKDB{
     @Override
     public int createTables(){
         
-        int result;
+        int result = 0;
         Statement stm;
         
         // First, creating our query strings.
@@ -64,7 +64,7 @@ public class BOOKDB implements IBOOKDB{
             stm.close();
         }
         catch (SQLException e){
-            System.out.println("Failed to create Author table with the exception "+e);
+            System.out.println(e.getMessage());
         }
         // publisher(publisher_id:int, publisher_name:varchar(50))
         String queryCreatePublisherTable = ""
@@ -78,7 +78,7 @@ public class BOOKDB implements IBOOKDB{
             stm.close();
         }
         catch (SQLException e){
-            System.out.println("Failed to create publisher table with the exception "+e);
+            System.out.println(e.getMessage());
         }
         // book(isbn:char(13), book_name:varchar(120), publisher_id:int,
         // first_publish_year:char(4), page_count:int, category:varchar(25),
@@ -101,7 +101,7 @@ public class BOOKDB implements IBOOKDB{
             stm.close();
         }
         catch (SQLException e){
-            System.out.println("Failed to create book table with the exception "+e);
+            System.out.println(e.getMessage());
         }
         // author_of(isbn:char(13),author_id:int)REFERENCES book(isbn) author(authorid)
         String queryCreateAuthorOfTable = ""
@@ -118,7 +118,7 @@ public class BOOKDB implements IBOOKDB{
             stm.close();
         }
         catch (SQLException e){
-            System.out.println("Failed to create author_of table with the exception "+e);
+            System.out.println(e.getMessage());
         }
         // phw1(isbn:char(13), book_name:varchar(120), rating:float)
         String queryCreatePhw1Table = ""
@@ -132,9 +132,9 @@ public class BOOKDB implements IBOOKDB{
             stm.close();
         }
         catch (SQLException e){
-            System.out.println("Failed to create phw1 table with the exception "+e);
+            System.out.println(e.getMessage());
         }
-        return 0;
+        return result;
     }
 
     /**
@@ -144,7 +144,57 @@ public class BOOKDB implements IBOOKDB{
      */
     @Override
     public int dropTables(){
-        return 0;
+        // Need to drop tables with the correct order.
+        // Otherwise REFERENCE constraint will be violated.
+        int result = 0;
+        Statement stm = null;
+        
+        String dropQueryForPHW1Table = "DROP TABLE IF EXISTS phw1";
+        try{
+            stm = BOOKDB.con.createStatement();
+            result = stm.executeUpdate(dropQueryForPHW1Table);
+            stm.close();
+        }
+        catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        String dropQueryForAuthorOfTable = "DROP TABLE IF EXISTS author_of";
+        try{
+            stm = BOOKDB.con.createStatement();
+            result = stm.executeUpdate(dropQueryForAuthorOfTable);
+            stm.close();
+        }
+        catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        String dropQueryForBookTable = "DROP TABLE IF EXISTS book";
+        try{
+            stm = BOOKDB.con.createStatement();
+            result = stm.executeUpdate(dropQueryForBookTable);
+            stm.close();
+        }
+        catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        String dropQueryForPublisherTable = "DROP TABLE IF EXISTS publisher";
+        try{
+            stm = BOOKDB.con.createStatement();
+            result = stm.executeUpdate(dropQueryForPublisherTable);
+            stm.close();
+        }
+        catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        String dropQueryForAuthorTable = "DROP TABLE IF EXISTS author";
+        try{
+            stm = BOOKDB.con.createStatement();
+            result = stm.executeUpdate(dropQueryForAuthorTable);
+            stm.close();
+        }
+        catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return result;
     }
 
     /**
@@ -155,7 +205,26 @@ public class BOOKDB implements IBOOKDB{
      */
     @Override
     public int insertAuthor(Author[] authors){
-        return 0;
+        int result = 0;
+        int insertSize = authors.length;
+        for (int i = 0; i<insertSize; i++){
+            Statement stm;
+            String authorInsertString = ""
+            + "INSERT INTO author(author_id, author_name)"
+            + " VALUES(" + authors[i].getAuthor_id() + ", "
+            // // Author name may be empty. Using ternary operator to handle it.
+            + (authors[i].getAuthor_name().isEmpty() ? "NULL)" : authors[i].getAuthor_name())
+            + ")";
+            try{
+                stm = BOOKDB.con.createStatement();
+                result = stm.executeUpdate(authorInsertString);
+                stm.close();
+            }
+            catch(SQLException e){
+                System.out.println(e.getMessage());
+            }
+        }
+        return result;
     }
 
     /**
@@ -166,7 +235,30 @@ public class BOOKDB implements IBOOKDB{
      */
     @Override
     public int insertBook(Book[] books){
-        return 0;
+        int result = 0;
+        int insertSize = books.length;
+        for (int i = 0; i<insertSize; i++){
+            Statement stm;
+            String authorInsertString = ""
+            + "INSERT INTO book(isbn, book_name, publisher_id, first_publish_year, "
+                    + "page_count, category, rating)"
+            + " VALUES(" + books[i].getIsbn() + ", "
+            // // Rest may be empty. Using ternary operator to handle it.
+            + (books[i].getBook_name().isEmpty() ? "NULL)" : books[i].getBook_name()) +  ", "
+            + (books[i].getPublisher_id().isEmpty() ? "NULL)" : books[i].getPublisher_id()) +  ", "
+            + (books[i].getBook_name().isEmpty() ? "NULL)" : books[i].getBook_name()) +  ", "
+            + (books[i].getBook_name().isEmpty() ? "NULL)" : books[i].getBook_name()) +  ", "
+            + ")";
+            try{
+                stm = BOOKDB.con.createStatement();
+                result = stm.executeUpdate(authorInsertString);
+                stm.close();
+            }
+            catch(SQLException e){
+                System.out.println(e.getMessage());
+            }
+        }
+        return result;
     }
 
     /**
