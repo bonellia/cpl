@@ -6,6 +6,7 @@
 package ceng.ceng351.bookdb;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.PreparedStatement;
@@ -19,9 +20,7 @@ import java.util.List;
  * @author Kril
  */
 public class BOOKDB implements IBOOKDB{
-    
-    private static Connection con;
-    
+    private static Connection con = null;
     /**
      * Place your initialization code inside if required.
      *
@@ -42,6 +41,14 @@ public class BOOKDB implements IBOOKDB{
      */
     @Override
     public void initialize(){
+        String url = "jdbc:mysql://144.122.71.65:8084/db1819325";
+
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            con = DriverManager.getConnection(url, "1819325", "f079c315");
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace(System.err);
+        }
     }
 
     /**
@@ -51,51 +58,41 @@ public class BOOKDB implements IBOOKDB{
      */
     @Override
     public int createTables(){
-        
+        con = null;
+        Statement stm = null; 
         int result = 0;
-        Statement stm;
         List<String> queryQueue = new ArrayList<>();
         
         // First, creating our query strings.
         // author(author_id:int, author_name:varchar(60))
         queryQueue.add(""
-                + "CREATE TABLE author("
-                + "author_id INT NOT NULL,"
-                + "author_name VARCHAR(60),"
-                + "PRIMARY KEY (author_id))");
+        + "CREATE TABLE author(author_id INT NOT NULL, "
+        + "author_name VARCHAR(60), PRIMARY KEY (author_id))");
         
         // publisher(publisher_id:int, publisher_name:varchar(50))
         queryQueue.add(""
-                + "CREATE TABLE publisher("
-                + "publisher_id INT NOT NULL,"
-                + "publisher_name VARCHAR(50),"
-                + "PRIMARY KEY (publisher_id))");
+        + "CREATE TABLE publisher(publisher_id INT NOT NULL,"
+        + "publisher_name VARCHAR(50), PRIMARY KEY (publisher_id))");
         
         // book(isbn:char(13), book_name:varchar(120), publisher_id:int,
         // first_publish_year:char(4), page_count:int, category:varchar(25),
         // rating:float)REFERENCES publisher(publisherid)
         queryQueue.add(""
-                + "CREATE TABLE book("
-                + "isbn CHAR(13) NOT NULL,"
-                + "book_name VARCHAR(120) NOT NULL,"
-                + "publisher_id INT,"
-                + "first_publish_year CHAR(4),"
-                + "page_count INT,"
-                + "category VARCHAR(25),"
-                + "rating FLOAT,"
-                + "PRIMARY KEY (isbn),"
-                + "FOREIGN KEY (publisher_id) REFERENCES publisher(publisher_id)"
-                            + " ON UPDATE CASCADE ON DELETE CASCADE)");
+        + "CREATE TABLE book(isbn CHAR(13) NOT NULL,"
+        + "book_name VARCHAR(120) NOT NULL, publisher_id INT,"
+        + "first_publish_year CHAR(4), page_count INT,"
+        + "category VARCHAR(25), rating FLOAT,"
+        + "PRIMARY KEY (isbn),"
+        + "FOREIGN KEY (publisher_id) REFERENCES publisher(publisher_id)"
+        + " ON UPDATE CASCADE ON DELETE CASCADE)");
         
         // author_of(isbn:char(13),author_id:int)REFERENCES book(isbn) author(authorid)
         queryQueue.add(""
-                + "CREATE TABLE author_of("
-                + "isbn CHAR(13) NOT NULL,"
-                + "author_id INT NOT NULL,"
-                + "FOREIGN KEY (isbn) REFERENCES book(isbn)"
-                            + " ON UPDATE CASCADE ON DELETE CASCADE,"
-                + "FOREIGN KEY (author_id) REFERENCES author(author_id)"
-                            + " ON UPDATE CASCADE ON DELETE CASCADE)");
+        + "CREATE TABLE author_of(isbn CHAR(13) NOT NULL, author_id INT NOT NULL,"
+        + "FOREIGN KEY (isbn) REFERENCES book(isbn)"
+                    + " ON UPDATE CASCADE ON DELETE CASCADE,"
+        + "FOREIGN KEY (author_id) REFERENCES author(author_id)"
+                    + " ON UPDATE CASCADE ON DELETE CASCADE)");
         
         // phw1(isbn:char(13), book_name:varchar(120), rating:float)
         queryQueue.add(""
@@ -105,15 +102,32 @@ public class BOOKDB implements IBOOKDB{
                 + "rating FLOAT)");
         for (String createTableQuery : queryQueue){
             try {
-            stm = BOOKDB.con.createStatement();
-            result += stm.executeUpdate(createTableQuery);
-            stm.close();
+                // Establishing a new question for every query.
+                // Might be inefficient, will visit later.
+                initialize();
+                if (con != null){
+                    stm = con.createStatement();
+                    result = stm.executeUpdate(createTableQuery);
+                }
             }
             catch (SQLException e){
                 e.printStackTrace(System.err);
             }
+            finally {
+                try {
+                    if (stm != null) stm.close();
+                }
+                catch (SQLException e) { 
+                    e.printStackTrace(System.err);
+                }
+                try {
+                    if (con != null) con.close(); 
+                }
+                catch (SQLException e) {
+                    e.printStackTrace(System.err);
+                }
+            }
         }
-        
         return result;
     }
 
@@ -126,19 +140,37 @@ public class BOOKDB implements IBOOKDB{
     public int dropTables(){
         // Need to drop tables with the correct order.
         // Otherwise REFERENCE constraint will be violated.
+        con = null;
+        Statement stm = null; 
         int result = 0;
         List<String> tableList = Arrays.asList("phw1", "author_of", "book", "publisher", "author");
         
         for (String tableName : tableList){
             String dropTableString = "DROP TABLE IF EXISTS " + tableName;
             try{
-                Statement stm = null;
+                initialize();
+                if(con != null){
                 stm = con.createStatement();
-                result += stm.executeUpdate(dropTableString);
-                stm.close();
+                result = stm.executeUpdate(dropTableString);
+                con.close();
+                }
             }
             catch (SQLException e) {
                 e.printStackTrace(System.err);
+            }
+            finally {
+                try {
+                    if (stm != null) {stm.close();}
+                }
+                catch (SQLException e) { 
+                    e.printStackTrace(System.err);
+                }
+                try {
+                    if (con != null) {con.close();}
+                }
+                catch (SQLException e) {
+                    e.printStackTrace(System.err);
+                }
             }
         }
         return result;
@@ -152,18 +184,37 @@ public class BOOKDB implements IBOOKDB{
      */
     @Override
     public int insertAuthor(Author[] authors){
+        con = null;
         int result = 0;
+        PreparedStatement pstm = null;
         int authorCount = authors.length;
         for (int i = 0; i<authorCount; i++){
             try{
-                PreparedStatement stm = con.prepareStatement("INSERT INTO book VALUES(?, ?)");
-                stm.setInt(1, authors[i].getAuthor_id());
-                stm.setString(2, authors[i].getAuthor_name().isEmpty() ? "NULL)" : authors[i].getAuthor_name());
-                result += stm.executeUpdate();
-                con.close();
+                if(con != null){
+                    initialize();
+                    pstm = con.prepareStatement("INSERT INTO book VALUES(?, ?)");
+                    pstm.setInt(1, authors[i].getAuthor_id());
+                    pstm.setString(2, authors[i].getAuthor_name().isEmpty() ? "NULL)" : authors[i].getAuthor_name());
+                    result = pstm.executeUpdate();
+                    con.close();
+                }                
             }
             catch(SQLException e){
                 e.printStackTrace(System.err);
+            }
+            finally {
+                try {
+                    if (pstm != null) {pstm.close();}
+                }
+                catch (SQLException e) { 
+                    e.printStackTrace(System.err);
+                }
+                try {
+                    if (con != null) {con.close();}
+                }
+                catch (SQLException e) {
+                    e.printStackTrace(System.err);
+                }
             }
         }
         return result;
@@ -176,23 +227,42 @@ public class BOOKDB implements IBOOKDB{
      */
     @Override
     public int insertBook(Book[] books){
+        con = null;
         int result = 0;
+        PreparedStatement pstm = null;
         int bookCount = books.length;
         for (int i = 0; i<bookCount; i++){
             try{
-                PreparedStatement stm = con.prepareStatement("INSERT INTO book VALUES(?, ?, ?, ?, ?, ?, ?)");
-                stm.setString(1, books[i].getIsbn());
-                stm.setString(2, books[i].getBook_name().isEmpty() ? "NULL)" : books[i].getBook_name());
-                stm.setInt(3, books[i].getPublisher_id());
-                stm.setString(4, books[i].getFirst_publish_year().isEmpty() ? "NULL)" : books[i].getFirst_publish_year());
-                stm.setInt(5, books[i].getPage_count());
-                stm.setString(6, books[i].getCategory().isEmpty() ? "NULL)" : books[i].getCategory());
-                stm.setDouble(7, books[i].getRating());
-                result += stm.executeUpdate();
-                con.close();
+                if (con != null){
+                    initialize();
+                    pstm = con.prepareStatement("INSERT INTO book VALUES(?, ?, ?, ?, ?, ?, ?)");
+                    pstm.setString(1, books[i].getIsbn());
+                    pstm.setString(2, books[i].getBook_name().isEmpty() ? "NULL)" : books[i].getBook_name());
+                    pstm.setInt(3, books[i].getPublisher_id());
+                    pstm.setString(4, books[i].getFirst_publish_year().isEmpty() ? "NULL)" : books[i].getFirst_publish_year());
+                    pstm.setInt(5, books[i].getPage_count());
+                    pstm.setString(6, books[i].getCategory().isEmpty() ? "NULL)" : books[i].getCategory());
+                    pstm.setDouble(7, books[i].getRating());
+                    result = pstm.executeUpdate();
+                    con.close();
+                }
             }
             catch(SQLException e){
                 e.printStackTrace(System.err);
+            }
+            finally {
+                try {
+                    if (pstm != null) {pstm.close();}
+                }
+                catch (SQLException e) { 
+                    e.printStackTrace(System.err);
+                }
+                try {
+                    if (con != null) {con.close();}
+                }
+                catch (SQLException e) {
+                    e.printStackTrace(System.err);
+                }
             }
         }
         return result;
@@ -206,18 +276,37 @@ public class BOOKDB implements IBOOKDB{
      */
     @Override
     public int insertPublisher(Publisher[] publishers){
+        con = null;
         int result = 0;
+        PreparedStatement pstm = null;
         int publisherCount = publishers.length;
         for (int i = 0; i<publisherCount; i++){
             try{
-                PreparedStatement stm = con.prepareStatement("INSERT INTO book VALUES(?, ?)");
-                stm.setInt(1, publishers[i].getPublisher_id());
-                stm.setString(2, publishers[i].getPublisher_name().isEmpty() ? "NULL)" : publishers[i].getPublisher_name());
-                result += stm.executeUpdate();
-                con.close();
+                if (con != null){
+                    initialize();
+                    pstm = con.prepareStatement("INSERT INTO book VALUES(?, ?)");
+                    pstm.setInt(1, publishers[i].getPublisher_id());
+                    pstm.setString(2, publishers[i].getPublisher_name().isEmpty() ? "NULL)" : publishers[i].getPublisher_name());
+                    result = pstm.executeUpdate();
+                    con.close();
+                }                
             }
             catch(SQLException e){
                 e.printStackTrace(System.err);
+            }
+            finally {
+                try {
+                    if (pstm != null) {pstm.close();}
+                }
+                catch (SQLException e) { 
+                    e.printStackTrace(System.err);
+                }
+                try {
+                    if (con != null) {con.close();}
+                }
+                catch (SQLException e) {
+                    e.printStackTrace(System.err);
+                }
             }
         }
         return result;
@@ -231,18 +320,38 @@ public class BOOKDB implements IBOOKDB{
      */
     @Override
     public int insertAuthor_of(Author_of[] author_ofs){
+        con = null;
         int result = 0;
+        PreparedStatement pstm = null;
         int authorOfCount = author_ofs.length;
         for (int i = 0; i<authorOfCount; i++){
             try{
-                PreparedStatement stm = con.prepareStatement("INSERT INTO book VALUES(?, ?)");
-                stm.setString(1, author_ofs[i].getIsbn().isEmpty() ? "NULL)" : author_ofs[i].getIsbn());
-                stm.setInt(2, author_ofs[i].getAuthor_id());
-                result += stm.executeUpdate();
-                con.close();
+                if (con != null){
+                    initialize();
+                    pstm = con.prepareStatement("INSERT INTO book VALUES(?, ?)");
+                    pstm.setString(1, author_ofs[i].getIsbn().isEmpty() ? "NULL)" : author_ofs[i].getIsbn());
+                    pstm.setInt(2, author_ofs[i].getAuthor_id());
+                    result = pstm.executeUpdate();
+                    con.close();
+                }
+                
             }
             catch(SQLException e){
                 e.printStackTrace(System.err);
+            }
+            finally {
+                try {
+                    if (pstm != null) {pstm.close();}
+                }
+                catch (SQLException e) { 
+                    e.printStackTrace(System.err);
+                }
+                try {
+                    if (con != null) {con.close();}
+                }
+                catch (SQLException e) {
+                    e.printStackTrace(System.err);
+                }
             }
         }
         return result;
