@@ -107,7 +107,8 @@ public class BOOKDB implements IBOOKDB{
                 initialize();
                 if (con != null){
                     stm = con.createStatement();
-                    result = stm.executeUpdate(createTableQuery);
+                   stm.executeUpdate(createTableQuery);
+                    result ++;
                 }
             }
             catch (SQLException e){
@@ -151,8 +152,8 @@ public class BOOKDB implements IBOOKDB{
                 initialize();
                 if(con != null){
                 stm = con.createStatement();
-                result = stm.executeUpdate(dropTableString);
-                con.close();
+                stm.executeUpdate(dropTableString);
+                result++;
                 }
             }
             catch (SQLException e) {
@@ -185,18 +186,19 @@ public class BOOKDB implements IBOOKDB{
     @Override
     public int insertAuthor(Author[] authors){
         con = null;
+       
         int result = 0;
         PreparedStatement pstm = null;
         int authorCount = authors.length;
         for (int i = 0; i<authorCount; i++){
             try{
-                if(con != null){
-                    initialize();
-                    pstm = con.prepareStatement("INSERT INTO book VALUES(?, ?)");
+                 initialize();
+                if(con != null){                    
+                    pstm = con.prepareStatement("INSERT INTO author VALUES(?, ?)");
                     pstm.setInt(1, authors[i].getAuthor_id());
                     pstm.setString(2, authors[i].getAuthor_name().isEmpty() ? "NULL)" : authors[i].getAuthor_name());
-                    result = pstm.executeUpdate();
-                    con.close();
+                    pstm.executeUpdate();
+                    result ++;            
                 }                
             }
             catch(SQLException e){
@@ -233,8 +235,9 @@ public class BOOKDB implements IBOOKDB{
         int bookCount = books.length;
         for (int i = 0; i<bookCount; i++){
             try{
+                initialize();
                 if (con != null){
-                    initialize();
+                    
                     pstm = con.prepareStatement("INSERT INTO book VALUES(?, ?, ?, ?, ?, ?, ?)");
                     pstm.setString(1, books[i].getIsbn());
                     pstm.setString(2, books[i].getBook_name().isEmpty() ? "NULL)" : books[i].getBook_name());
@@ -243,8 +246,8 @@ public class BOOKDB implements IBOOKDB{
                     pstm.setInt(5, books[i].getPage_count());
                     pstm.setString(6, books[i].getCategory().isEmpty() ? "NULL)" : books[i].getCategory());
                     pstm.setDouble(7, books[i].getRating());
-                    result = pstm.executeUpdate();
-                    con.close();
+                    pstm.executeUpdate();
+                    result ++;
                 }
             }
             catch(SQLException e){
@@ -282,13 +285,13 @@ public class BOOKDB implements IBOOKDB{
         int publisherCount = publishers.length;
         for (int i = 0; i<publisherCount; i++){
             try{
-                if (con != null){
-                    initialize();
-                    pstm = con.prepareStatement("INSERT INTO book VALUES(?, ?)");
+                initialize();
+                if (con != null){                    
+                    pstm = con.prepareStatement("INSERT INTO publisher VALUES(?, ?)");
                     pstm.setInt(1, publishers[i].getPublisher_id());
                     pstm.setString(2, publishers[i].getPublisher_name().isEmpty() ? "NULL)" : publishers[i].getPublisher_name());
-                    result = pstm.executeUpdate();
-                    con.close();
+                    pstm.executeUpdate();
+                    result ++;
                 }                
             }
             catch(SQLException e){
@@ -326,13 +329,14 @@ public class BOOKDB implements IBOOKDB{
         int authorOfCount = author_ofs.length;
         for (int i = 0; i<authorOfCount; i++){
             try{
+                initialize();
                 if (con != null){
-                    initialize();
-                    pstm = con.prepareStatement("INSERT INTO book VALUES(?, ?)");
+                    
+                    pstm = con.prepareStatement("INSERT INTO author_of VALUES(?, ?)");
                     pstm.setString(1, author_ofs[i].getIsbn().isEmpty() ? "NULL)" : author_ofs[i].getIsbn());
                     pstm.setInt(2, author_ofs[i].getAuthor_id());
-                    result = pstm.executeUpdate();
-                    con.close();
+                    pstm.executeUpdate();
+                    result ++;
                 }
                 
             }
